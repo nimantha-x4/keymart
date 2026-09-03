@@ -53,7 +53,7 @@ export function SiteFooter() {
             Sign in
           </Link>
           <Link href="/register" className="block text-muted-foreground hover:text-foreground">
-            Create account
+            Sign up
           </Link>
           <Link href="/account/orders" className="block text-muted-foreground hover:text-foreground">
             Order history

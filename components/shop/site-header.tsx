@@ -83,7 +83,7 @@ export async function SiteHeader() {
                   "hidden sm:inline-flex",
                 )}
               >
-                Create account
+                Sign up
               </Link>
             </>
           )}

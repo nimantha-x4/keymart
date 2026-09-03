@@ -67,7 +67,7 @@ export function RegisterForm() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Create your account</CardTitle>
+        <CardTitle>Sign up</CardTitle>
         <CardDescription>
           Keep every key you buy in one place.
         </CardDescription>
@@ -115,7 +115,7 @@ export function RegisterForm() {
           </div>
           <Button type="submit" className="w-full" disabled={pending}>
             {pending && <Loader2 className="size-4 animate-spin" />}
-            Create account
+            Sign up
           </Button>
         </form>
 

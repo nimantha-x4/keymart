@@ -91,7 +91,7 @@ export function LoginForm() {
             href={`/register?callbackUrl=${encodeURIComponent(callbackUrl)}`}
             className="font-medium text-foreground hover:underline"
           >
-            Create an account
+            Sign up
           </Link>
         </p>
       </CardContent>
