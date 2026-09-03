@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Check, Copy, Loader2, XCircle } from "lucide-react";
-import { toast } from "sonner";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Check, Loader2, XCircle } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { useCart } from "@/lib/cart-store";
+import { KeyList } from "@/components/shop/key-list";
 
 type KeyGroup = { productName: string; quantity: number; keys: string[] };
 type StatusResponse = {
@@ -19,35 +19,6 @@ type StatusResponse = {
 };
 
 const DONE = new Set(["FULFILLED", "EXPIRED", "FAILED", "REFUNDED"]);
-
-function CopyKey({ value }: { value: string }) {
-  const [copied, setCopied] = useState(false);
-  return (
-    <div className="flex items-center gap-2">
-      <code className="flex-1 truncate rounded-md bg-muted px-2.5 py-1.5 font-mono text-sm">
-        {value}
-      </code>
-      <Button
-        type="button"
-        variant="outline"
-        size="icon-sm"
-        aria-label="Copy key"
-        onClick={async () => {
-          try {
-            await navigator.clipboard.writeText(value);
-            setCopied(true);
-            toast.success("Key copied");
-            setTimeout(() => setCopied(false), 1500);
-          } catch {
-            toast.error("Couldn't copy");
-          }
-        }}
-      >
-        {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
-      </Button>
-    </div>
-  );
-}
 
 export function OrderStatusView({
   orderNumber,
@@ -178,16 +149,12 @@ export function OrderStatusView({
         </p>
       </Card>
 
-      {(data.keys ?? []).map((group) => (
-        <Card key={group.productName} className="p-6">
-          <div className="mb-3 font-medium">{group.productName}</div>
-          <div className="space-y-2">
-            {group.keys.map((k) => (
-              <CopyKey key={k} value={k} />
-            ))}
-          </div>
-        </Card>
-      ))}
+      <KeyList
+        groups={(data.keys ?? []).map((g) => ({
+          productName: g.productName,
+          keys: g.keys,
+        }))}
+      />
 
       <div className="flex gap-3">
         <Link

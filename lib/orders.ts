@@ -28,6 +28,29 @@ export function getOrderByNumber(orderNumber: string) {
   });
 }
 
+export async function getUserOrders(userId: string) {
+  return prisma.order.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+    include: { items: { select: { quantity: true } } },
+  });
+}
+
+/** Full order detail, but only if it belongs to this user. */
+export async function getUserOrderDetail(userId: string, orderNumber: string) {
+  const order = await getOrderByNumber(orderNumber);
+  if (!order || order.userId !== userId) return null;
+  return order;
+}
+
+/** Verify a guest order by number + email (case-insensitive). */
+export async function lookupGuestOrder(orderNumber: string, email: string) {
+  const order = await getOrderByNumber(orderNumber.trim().toUpperCase());
+  if (!order) return null;
+  if (order.email.toLowerCase() !== email.trim().toLowerCase()) return null;
+  return order;
+}
+
 type Order = { userId: string | null; email: string };
 
 /** Can this requester see the order's keys? */
