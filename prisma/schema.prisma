@@ -1,0 +1,129 @@
+// KeyMart data model. See prisma/seed.ts for sample data.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum KeyStatus {
+  AVAILABLE
+  RESERVED
+  SOLD
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  FULFILLED
+  FAILED
+  EXPIRED
+  REFUNDED
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String?
+  passwordHash String?
+  role         Role     @default(USER)
+  orders       Order[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Category {
+  id        String    @id @default(cuid())
+  slug      String    @unique
+  name      String
+  sortOrder Int       @default(0)
+  products  Product[]
+  createdAt DateTime  @default(now())
+}
+
+model Product {
+  id               String       @id @default(cuid())
+  slug             String       @unique
+  name             String
+  shortDescription String
+  description      String
+  brand            String
+  platform         String
+  region           String       @default("Global")
+  priceCents       Int
+  imageUrl         String?
+  categoryId       String
+  category         Category     @relation(fields: [categoryId], references: [id])
+  published        Boolean      @default(true)
+  featured         Boolean      @default(false)
+  licenseKeys      LicenseKey[]
+  orderItems       OrderItem[]
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@index([categoryId])
+  @@index([published])
+}
+
+model LicenseKey {
+  // The license key itself is encrypted at rest with AES-256-GCM (see lib/crypto.ts).
+  id               String     @id @default(cuid())
+  productId        String
+  product          Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  secretCiphertext String
+  secretIv         String
+  secretAuthTag    String
+  fingerprint      String     @unique // sha256 of the normalized plaintext, used to dedupe uploads
+  status           KeyStatus  @default(AVAILABLE)
+  orderItemId      String?
+  orderItem        OrderItem? @relation(fields: [orderItemId], references: [id])
+  reservedAt       DateTime?
+  soldAt           DateTime?
+  createdAt        DateTime   @default(now())
+
+  @@index([productId, status])
+  @@index([orderItemId])
+}
+
+model Order {
+  id                    String      @id @default(cuid())
+  orderNumber           String      @unique
+  userId                String?
+  user                  User?       @relation(fields: [userId], references: [id])
+  email                 String
+  status                OrderStatus @default(PENDING)
+  subtotalCents         Int
+  totalCents            Int
+  currency              String      @default("usd")
+  stripeSessionId       String?     @unique
+  stripePaymentIntentId String?
+  items                 OrderItem[]
+  createdAt             DateTime    @default(now())
+  paidAt                DateTime?
+  updatedAt             DateTime    @updatedAt
+
+  @@index([userId])
+  @@index([email])
+}
+
+model OrderItem {
+  id             String       @id @default(cuid())
+  orderId        String
+  order          Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId      String
+  product        Product      @relation(fields: [productId], references: [id])
+  productName    String
+  unitPriceCents Int
+  quantity       Int
+  licenseKeys    LicenseKey[]
+
+  @@index([orderId])
+}
