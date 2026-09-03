@@ -3,7 +3,10 @@
 An online store for selling software license keys (Windows, Office, antivirus, …).
 
 Stack: Next.js 16 (App Router) · React 19 · Tailwind v4 + shadcn · Prisma + PostgreSQL ·
-Auth.js v5 · Stripe Checkout · Nodemailer.
+Auth.js v5 · Stripe Checkout (optional) · Nodemailer.
+
+License keys are encrypted at rest (AES-256-GCM) and only decrypted when shown to the
+buyer or an admin.
 
 ## Local setup
 
@@ -40,17 +43,31 @@ npm run dev             # http://localhost:3000
 Admin accounts are created only by the seed / directly in the database — there is no
 admin option on the public registration form (it always creates a regular customer).
 
-## Stripe (checkout + fulfillment)
+## Payments
 
-Checkout uses Stripe Checkout in test mode. Add your test keys to `.env`
-(`STRIPE_SECRET_KEY`), then run the webhook forwarder in a separate terminal:
+**Stripe is optional.** With no real `STRIPE_SECRET_KEY` in `.env`, checkout uses a local
+**simulated payment page** — order creation, key reservation, fulfillment and the keys
+email all run for real, just without a card or an external account.
+
+To switch to real Stripe Checkout, paste a test secret key into `.env` and run the webhook
+forwarder in a separate terminal:
 
 ```bash
 stripe listen --forward-to localhost:3000/api/webhooks/stripe
 # paste the printed "whsec_..." into STRIPE_WEBHOOK_SECRET in .env, then restart `npm run dev`
 ```
 
-Test card: `4242 4242 4242 4242`, any future expiry, any CVC.
+Test card: `4242 4242 4242 4242`, any future expiry, any CVC. No other code changes.
+
+## Try the flows
+
+- **Buy as a guest:** add to cart → `/checkout` → enter any email → pay (simulated) →
+  the success page polls until your keys appear; a copy is "emailed" (preview link in the
+  `npm run dev` console). Re-view them later at `/order-lookup`.
+- **Buy as a customer:** sign in first; the order shows up under `/account/orders`.
+- **Admin:** sign in as the admin account → `/admin` for the dashboard, add a product,
+  paste license keys on its *Manage keys* page, and manage orders (resend email, refund,
+  cancel).
 
 ## Email
 
@@ -72,11 +89,13 @@ and a preview URL is logged to the server console for every message.
 ## Project layout
 
 ```
-app/(shop)      storefront: home, catalog, product, cart, checkout
+app/(shop)      storefront: home, catalog, product, cart, checkout, order-lookup, legal
 app/(auth)      login / register
-app/account     signed-in customer area (order history, keys)
-app/admin       admin area (products, key inventory, orders)
-app/api         checkout, Stripe webhook, order status
-lib/            db, auth, crypto, stripe, mailer, inventory, cart store
+app/account     signed-in customer area (overview, order history, keys)
+app/admin       admin area (dashboard, product CRUD, key inventory, orders)
+app/api         checkout, mock payment, Stripe webhook, order status
+app/actions     server actions (auth, checkout support, admin, order lookup)
+lib/            db, auth, crypto, stripe, mailer, inventory, orders, products, cart store
 prisma/         schema + seed
+proxy.ts        route guard for /account and /admin
 ```
