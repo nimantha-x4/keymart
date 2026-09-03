@@ -226,18 +226,24 @@ async function main() {
   }
 
   console.log("Seeding users...");
-  const adminPassword = "admin12345";
+  // Admin accounts are provisioned here only — there is no admin self-registration.
+  const adminEmail = "nimantha.bt@gmail.com";
+  const adminPassword = "Nimantha@123";
   const userPassword = "user12345";
+
   await prisma.user.upsert({
-    where: { email: "admin@keymart.test" },
-    update: { role: "ADMIN", name: "KeyMart Admin" },
+    where: { email: adminEmail },
+    update: { role: "ADMIN", name: "Nimantha", passwordHash: await bcrypt.hash(adminPassword, 10) },
     create: {
-      email: "admin@keymart.test",
-      name: "KeyMart Admin",
+      email: adminEmail,
+      name: "Nimantha",
       role: "ADMIN",
       passwordHash: await bcrypt.hash(adminPassword, 10),
     },
   });
+  // Drop the old demo admin if it exists from an earlier seed.
+  await prisma.user.deleteMany({ where: { email: "admin@keymart.test" } });
+
   await prisma.user.upsert({
     where: { email: "user@keymart.test" },
     update: { name: "Test Customer" },
@@ -250,8 +256,8 @@ async function main() {
   });
 
   console.log("\nDone. Sign-in credentials:");
-  console.log(`  admin@keymart.test / ${adminPassword}  (ADMIN)`);
-  console.log(`  user@keymart.test  / ${userPassword}   (customer)`);
+  console.log(`  ${adminEmail} / ${adminPassword}  (ADMIN)`);
+  console.log(`  user@keymart.test / ${userPassword}   (customer)`);
 }
 
 main()

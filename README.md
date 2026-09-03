@@ -32,10 +32,13 @@ npm run dev             # http://localhost:3000
 
 ### Seeded accounts
 
-| Email                | Password     | Role     |
-| -------------------- | ------------ | -------- |
-| `admin@keymart.test` | `admin12345` | ADMIN    |
-| `user@keymart.test`  | `user12345`  | customer |
+| Email                   | Password       | Role     |
+| ----------------------- | -------------- | -------- |
+| `nimantha.bt@gmail.com` | `Nimantha@123` | ADMIN    |
+| `user@keymart.test`     | `user12345`    | customer |
+
+Admin accounts are created only by the seed / directly in the database — there is no
+admin option on the public registration form (it always creates a regular customer).
 
 ## Stripe (checkout + fulfillment)
 

@@ -1,14 +1,16 @@
 import Link from "next/link";
 import { KeyRound, Search } from "lucide-react";
+import { auth } from "@/lib/auth";
 import { getCategories } from "@/lib/products";
 import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { CartButton } from "@/components/shop/cart-button";
 import { MobileNav } from "@/components/shop/mobile-nav";
+import { AccountMenu } from "@/components/shop/account-menu";
 
 export async function SiteHeader() {
-  const categories = await getCategories();
+  const [categories, session] = await Promise.all([getCategories(), auth()]);
 
   const navLinks = [
     { href: "/products", label: "All products" },
@@ -60,21 +62,31 @@ export async function SiteHeader() {
 
           <CartButton />
 
-          <Link
-            href="/login"
-            className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
-          >
-            Sign in
-          </Link>
-          <Link
-            href="/register"
-            className={cn(
-              buttonVariants({ size: "sm" }),
-              "hidden sm:inline-flex",
-            )}
-          >
-            Create account
-          </Link>
+          {session?.user ? (
+            <AccountMenu
+              name={session.user.name ?? null}
+              email={session.user.email ?? ""}
+              isAdmin={session.user.role === "ADMIN"}
+            />
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
+              >
+                Sign in
+              </Link>
+              <Link
+                href="/register"
+                className={cn(
+                  buttonVariants({ size: "sm" }),
+                  "hidden sm:inline-flex",
+                )}
+              >
+                Create account
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </header>
