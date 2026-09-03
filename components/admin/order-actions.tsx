@@ -1,10 +1,11 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useRef } from "react";
 import { useFormStatus } from "react-dom";
-import { Loader2, Mail, RotateCcw, XCircle } from "lucide-react";
+import { Loader2, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import {
   resendOrderEmail,
   updateOrderStatus,
@@ -13,19 +14,17 @@ import {
 
 const INITIAL: FormResult = { ok: false, error: "" };
 
-function Pending({
-  idle,
-  icon,
-}: {
-  idle: string;
-  icon: React.ReactNode;
-}) {
+function ResendButton() {
   const { pending } = useFormStatus();
   return (
-    <>
-      {pending ? <Loader2 className="size-4 animate-spin" /> : icon}
-      {idle}
-    </>
+    <Button type="submit" variant="outline" size="sm" disabled={pending}>
+      {pending ? (
+        <Loader2 className="size-4 animate-spin" />
+      ) : (
+        <Mail className="size-4" />
+      )}
+      Resend keys email
+    </Button>
   );
 }
 
@@ -63,44 +62,52 @@ export function OrderActions({
     INITIAL,
   );
 
+  const cancelRef = useRef<HTMLFormElement>(null);
+  const refundRef = useRef<HTMLFormElement>(null);
+
   return (
     <div className="space-y-4">
       {status === "FULFILLED" && (
         <form action={resendAction}>
           <input type="hidden" name="orderNumber" value={orderNumber} />
-          <Button type="submit" variant="outline" size="sm">
-            <Pending idle="Resend keys email" icon={<Mail className="size-4" />} />
-          </Button>
+          <ResendButton />
           <Result state={resendState} />
         </form>
       )}
 
       {status === "PENDING" && (
-        <form action={statusAction}>
-          <input type="hidden" name="orderNumber" value={orderNumber} />
-          <input type="hidden" name="action" value="cancel" />
-          <Button type="submit" variant="outline" size="sm">
-            <Pending
-              idle="Cancel & release keys"
-              icon={<XCircle className="size-4" />}
-            />
-          </Button>
-        </form>
+        <div>
+          <form ref={cancelRef} action={statusAction} className="hidden">
+            <input type="hidden" name="orderNumber" value={orderNumber} />
+            <input type="hidden" name="action" value="cancel" />
+          </form>
+          <ConfirmDialog
+            triggerText="Cancel & release keys"
+            title="Cancel this order?"
+            description="The reserved keys go back into stock and the order is marked cancelled. This can't be undone."
+            confirmText="Cancel order"
+            confirmVariant="destructive"
+            onConfirm={() => cancelRef.current?.requestSubmit()}
+          />
+        </div>
       )}
 
       {(status === "FULFILLED" || status === "PAID") && (
-        <form
-          action={statusAction}
-          onSubmit={(e) => {
-            if (!confirm("Mark this order as refunded?")) e.preventDefault();
-          }}
-        >
-          <input type="hidden" name="orderNumber" value={orderNumber} />
-          <input type="hidden" name="action" value="refund" />
-          <Button type="submit" variant="destructive" size="sm">
-            <Pending idle="Mark refunded" icon={<RotateCcw className="size-4" />} />
-          </Button>
-        </form>
+        <div>
+          <form ref={refundRef} action={statusAction} className="hidden">
+            <input type="hidden" name="orderNumber" value={orderNumber} />
+            <input type="hidden" name="action" value="refund" />
+          </form>
+          <ConfirmDialog
+            triggerText="Mark refunded"
+            triggerVariant="destructive"
+            title="Mark this order as refunded?"
+            description="This records the order as refunded. Issue the actual refund in your payment provider separately. Delivered keys are not revoked."
+            confirmText="Mark refunded"
+            confirmVariant="destructive"
+            onConfirm={() => refundRef.current?.requestSubmit()}
+          />
+        </div>
       )}
 
       <Result state={statusState} />

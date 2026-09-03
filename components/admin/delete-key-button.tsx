@@ -1,26 +1,29 @@
 "use client";
 
+import { useRef } from "react";
 import { X } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { deleteLicenseKey } from "@/app/actions/admin";
 
 export function DeleteKeyButton({ id }: { id: string }) {
+  const formRef = useRef<HTMLFormElement>(null);
+
   return (
-    <form
-      action={deleteLicenseKey}
-      onSubmit={(e) => {
-        if (!confirm("Remove this key from stock?")) e.preventDefault();
-      }}
-    >
-      <input type="hidden" name="id" value={id} />
-      <Button
-        type="submit"
-        variant="ghost"
-        size="icon-xs"
-        aria-label="Delete key"
-      >
-        <X className="size-3.5" />
-      </Button>
-    </form>
+    <>
+      <form ref={formRef} action={deleteLicenseKey} className="hidden">
+        <input type="hidden" name="id" value={id} />
+      </form>
+      <ConfirmDialog
+        triggerIcon={<X className="size-3.5" />}
+        triggerAriaLabel="Delete key"
+        triggerVariant="ghost"
+        triggerSize="icon-xs"
+        title="Remove this key?"
+        description="The key is deleted from stock. This only works for keys that haven't been sold."
+        confirmText="Remove key"
+        confirmVariant="destructive"
+        onConfirm={() => formRef.current?.requestSubmit()}
+      />
+    </>
   );
 }

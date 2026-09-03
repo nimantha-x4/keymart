@@ -1,49 +1,40 @@
 "use client";
 
-import { useActionState } from "react";
-import { useFormStatus } from "react-dom";
-import { Loader2, Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useActionState, useRef } from "react";
+import { Trash2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { deleteProduct, type FormResult } from "@/app/actions/admin";
-
-function Inner() {
-  const { pending } = useFormStatus();
-  return (
-    <Button type="submit" variant="destructive" size="sm" disabled={pending}>
-      {pending ? (
-        <Loader2 className="size-4 animate-spin" />
-      ) : (
-        <Trash2 className="size-4" />
-      )}
-      Delete product
-    </Button>
-  );
-}
 
 export function DeleteProductButton({ id }: { id: string }) {
   const [state, formAction] = useActionState<FormResult, FormData>(
     deleteProduct,
     { ok: false, error: "" },
   );
+  const formRef = useRef<HTMLFormElement>(null);
 
   return (
-    <form
-      action={formAction}
-      onSubmit={(e) => {
-        if (!confirm("Delete this product? This can't be undone.")) {
-          e.preventDefault();
-        }
-      }}
-      className="space-y-2"
-    >
-      <input type="hidden" name="id" value={id} />
+    <div className="space-y-2">
       {!state.ok && state.error && (
         <Alert variant="destructive">
           <AlertDescription>{state.error}</AlertDescription>
         </Alert>
       )}
-      <Inner />
-    </form>
+
+      <form ref={formRef} action={formAction} className="hidden">
+        <input type="hidden" name="id" value={id} />
+      </form>
+
+      <ConfirmDialog
+        triggerText="Delete product"
+        triggerIcon={<Trash2 className="size-4" />}
+        triggerVariant="destructive"
+        title="Delete this product?"
+        description="This permanently removes the product and any unsold keys. Products that appear in past orders can't be deleted — unpublish them instead."
+        confirmText="Delete product"
+        confirmVariant="destructive"
+        onConfirm={() => formRef.current?.requestSubmit()}
+      />
+    </div>
   );
 }
